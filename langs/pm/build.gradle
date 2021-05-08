@@ -47,6 +47,9 @@ dependencies {
     antlr "org.antlr:antlr4:4.8" // use ANTLR version 4
 
     compile group: 'org.antlr', name: 'ST4', version: '4.3'
+
+    compile 'org.sbml.jsbml:jsbml:1.5'
+
 }
 
 generateGrammarSource {
