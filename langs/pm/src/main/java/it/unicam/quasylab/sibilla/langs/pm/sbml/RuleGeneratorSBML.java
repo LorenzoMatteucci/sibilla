@@ -45,6 +45,12 @@ public class RuleGeneratorSBML {
         return populationRuleList;
     }
 
+    public List<PopulationRule> getRulesFromRulesList(){
+
+        //  TO DO ?
+
+        return null;
+    }
 
 
     /*
@@ -69,15 +75,9 @@ public class RuleGeneratorSBML {
         String name = getRuleName(r);
         Population[] pre = getReactionElement(r.getListOfReactants());
         Population[] post = getReactionElement(r.getListOfProducts());
-        Function<Population,Population> rate = getRateFunction();
+        //Function<?,?> rate = getRateFunction();
 
-        PopulationRule p = new PopulationRule() {
-            @Override
-            public PopulationTransition apply(RandomGenerator r, double now, PopulationState state) {
-                return null;
-            }
-        };
-        return p;
+        return null;
     }
 
     private String getRuleName(Reaction r){

@@ -60,16 +60,19 @@ public class PopulationModelGeneratorSBML {
 
     private List<PopulationRule> generateRules() {
 
-        String str = "";
-        ListOf<Reaction> reactionList = sbmlModel.getListOfReactions();
-        for (Reaction r: reactionList) {
-            str += speciesInRulesString(r.getListOfReactants());
-            str += "-->";
-            str += speciesInRulesString(r.getListOfProducts());
-            str += "  |   " + kineticLawString(r) + "\n";
-        }
 
         return null;
+    }
+
+
+    /*
+    String str = "";
+    ListOf<Reaction> reactionList = sbmlModel.getListOfReactions();
+        for (Reaction r: reactionList) {
+        str += speciesInRulesString(r.getListOfReactants());
+        str += "-->";
+        str += speciesInRulesString(r.getListOfProducts());
+        str += "  |   " + kineticLawString(r) + "\n";
     }
 
     public static String kineticLawString(Reaction r){
@@ -81,6 +84,7 @@ public class PopulationModelGeneratorSBML {
         for (SpeciesReference re : reactantsList) str += " " + re.getSpecies() + " ";
         return str;
     }
+     */
 
     /**
      * Method for the generation of the population registry
