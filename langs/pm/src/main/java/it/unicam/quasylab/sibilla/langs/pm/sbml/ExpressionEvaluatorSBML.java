@@ -9,7 +9,7 @@ public class ExpressionEvaluatorSBML {
         public void compile(ASTNodeCompiler compiler) throws SBMLException {
     ASTNodeValue value;
     switch (getType()) {
-  
+
         case REAL:
 
         case INTEGER:

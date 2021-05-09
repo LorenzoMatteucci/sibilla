@@ -1,10 +1,7 @@
 package it.unicam.quasylab.sibilla.langs.pm.sbml;
 
 import it.unicam.quasylab.sibilla.core.models.EvaluationEnvironment;
-import it.unicam.quasylab.sibilla.core.models.pm.Population;
-import it.unicam.quasylab.sibilla.core.models.pm.PopulationRule;
-import it.unicam.quasylab.sibilla.core.models.pm.PopulationState;
-import it.unicam.quasylab.sibilla.core.models.pm.PopulationTransition;
+import it.unicam.quasylab.sibilla.core.models.pm.*;
 import it.unicam.quasylab.sibilla.core.models.pm.util.PopulationRegistry;
 import it.unicam.quasylab.sibilla.langs.pm.ExpressionEvaluator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -76,8 +73,9 @@ public class RuleGeneratorSBML {
         Population[] pre = getReactionElement(r.getListOfReactants());
         Population[] post = getReactionElement(r.getListOfProducts());
         //Function<?,?> rate = getRateFunction();
-
-        return null;
+        //ReactionRule reactionRule = new ReactionRule();
+        RatePopulationFunction rateFunction = null;
+        return new ReactionRule(name,pre,post,rateFunction);
     }
 
     private String getRuleName(Reaction r){
