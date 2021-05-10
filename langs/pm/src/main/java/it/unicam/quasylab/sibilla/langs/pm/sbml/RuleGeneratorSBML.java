@@ -50,6 +50,9 @@ public class RuleGeneratorSBML {
     }
 
 
+    public List<PopulationRule> getRulesFromEventList(){
+        return null;
+    }
     /*
             PopulationRule rule_S_G_A = new ReactionRule(
                 "S->A",
@@ -72,9 +75,7 @@ public class RuleGeneratorSBML {
         String name = getRuleName(r);
         Population[] pre = getReactionElement(r.getListOfReactants());
         Population[] post = getReactionElement(r.getListOfProducts());
-        //Function<?,?> rate = getRateFunction();
-        //ReactionRule reactionRule = new ReactionRule();
-        RatePopulationFunction rateFunction = null;
+        RatePopulationFunction rateFunction = getRatePopulationFunction(r);
         return new ReactionRule(name,pre,post,rateFunction);
     }
 
@@ -107,9 +108,12 @@ public class RuleGeneratorSBML {
     }
 
 
-    private Function<Population,Population> getRateFunction(){
+    private RatePopulationFunction getRatePopulationFunction(Reaction r){
+
         return null;
     }
+
+
     /*
     @Override
     public Boolean visitRule_body(PopulationModelParser.Rule_bodyContext ctx) {
