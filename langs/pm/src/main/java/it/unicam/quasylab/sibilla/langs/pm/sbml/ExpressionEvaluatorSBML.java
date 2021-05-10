@@ -1,8 +1,36 @@
 package it.unicam.quasylab.sibilla.langs.pm.sbml;
 
+import it.unicam.quasylab.sibilla.langs.pm.PopulationModelBaseVisitor;
+
+import java.util.function.BiFunction;
+
 public class ExpressionEvaluatorSBML {
 
+    public class DoubleExpressionEvaluatorSBML extends PopulationModelBaseVisitor<Double>{
+    }
 
+    /**
+     * Function that return the result of the operation parsed from the input parameter
+     *
+     * @param oper, the string operator
+     * @return the result of the operation
+     */
+
+    public BiFunction<Double, Double, Double> getOperator(String oper){
+        if (oper.equals("PLUS")){
+            return (x,y) -> x+y;
+        }
+        if (oper.equals("MINUS")){
+            return (x,y) -> x-y;
+        }
+        if (oper.equals("TIMES")){
+            return (x,y) -> x*y;
+        }
+        if (oper.equals("DIVIDE")){
+            return (x,y) -> x/y;
+        }
+        return null;
+    }
 
     public void delete(){
         /*
