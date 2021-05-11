@@ -12,21 +12,21 @@ public class ExpressionEvaluatorSBML {
     /**
      * Function that return the result of the operation parsed from the input parameter
      *
-     * @param oper, the string operator
+     * @param operator, the string operator
      * @return the result of the operation
      */
 
-    public BiFunction<Double, Double, Double> getOperator(String oper){
-        if (oper.equals("PLUS")){
+    public BiFunction<Double, Double, Double> getOperator(String operator){
+        if (operator.equals("PLUS")){
             return (x,y) -> x+y;
         }
-        if (oper.equals("MINUS")){
+        if (operator.equals("MINUS")){
             return (x,y) -> x-y;
         }
-        if (oper.equals("TIMES")){
+        if (operator.equals("TIMES")){
             return (x,y) -> x*y;
         }
-        if (oper.equals("DIVIDE")){
+        if (operator.equals("DIVIDE")){
             return (x,y) -> x/y;
         }
         return null;

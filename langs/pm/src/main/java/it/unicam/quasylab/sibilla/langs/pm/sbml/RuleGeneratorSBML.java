@@ -5,6 +5,7 @@ import it.unicam.quasylab.sibilla.core.models.pm.*;
 import it.unicam.quasylab.sibilla.core.models.pm.util.PopulationRegistry;
 import it.unicam.quasylab.sibilla.langs.pm.ExpressionEvaluator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.sbml.jsbml.ASTNode;
 import org.sbml.jsbml.ListOf;
 import org.sbml.jsbml.Reaction;
 import org.sbml.jsbml.SpeciesReference;
@@ -12,6 +13,7 @@ import org.sbml.jsbml.SpeciesReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class RuleGeneratorSBML {
@@ -114,6 +116,38 @@ public class RuleGeneratorSBML {
     }
 
 
+    class TreeVisitor {
+        private ASTNode treeJSBML;
+        private List<BiFunction<Double,Double,Double>> functionList;
+
+        public TreeVisitor(ASTNode treeJSBML) {
+            this.treeJSBML = treeJSBML;
+        }
+
+        private void visitTree(ASTNode node){
+            int numberOfChildNodes = node.getChildCount();
+            if(numberOfChildNodes !=0 ){
+                ASTNode.Type t = node.getType();
+                for (ASTNode n : node.getChildren()) {
+
+                }
+
+            } else
+            {
+                ASTNode nod = new ASTNode();
+                //hnod.set
+                //node.getVariable().
+            }
+
+        }
+
+        public List<BiFunction<Double,Double,Double>> getFunctionList() {
+            BiFunction<Double,Double,Double> fun = (x,y) -> x+y;
+            double g = fun.apply(fun.apply(4.0,5.0),4.0);
+
+            return functionList;
+        }
+    }
     /*
     @Override
     public Boolean visitRule_body(PopulationModelParser.Rule_bodyContext ctx) {
