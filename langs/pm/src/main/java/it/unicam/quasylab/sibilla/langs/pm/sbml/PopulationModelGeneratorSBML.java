@@ -22,7 +22,8 @@ import java.util.stream.IntStream;
 
 public class PopulationModelGeneratorSBML {
 
-    private Model sbmlModel;
+    private ModelSBML sbmlModel;
+
 
     public PopulationModelGeneratorSBML(String path){
         SBMLReader sbmlReader = new SBMLReader();
@@ -34,7 +35,10 @@ public class PopulationModelGeneratorSBML {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        this.sbmlModel = sbmlDocument.getModel();
+
+        //Downcasting form Model to ModelSBML
+
+        this.sbmlModel = (ModelSBML) sbmlDocument.getModel();
     }
 
     public PopulationModelDefinition getPopulationModelDefinition() throws IOException {
