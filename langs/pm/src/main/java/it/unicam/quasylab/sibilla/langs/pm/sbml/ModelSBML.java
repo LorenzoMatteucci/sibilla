@@ -51,6 +51,7 @@ public class ModelSBML extends Model {
     private void applyCorrectionReactionRules(){
         for (Reaction r:this.getListOfReactions()) {
             replaceCompartmentNodes(r.getKineticLaw().getMath());
+            convertTreeToBinary(r.getKineticLaw().getMath());
         }
     }
 
@@ -107,6 +108,38 @@ public class ModelSBML extends Model {
             newNode.addChild(speciesNode);
         }
         return newNode;
+    }
+
+    /**
+     * Convert a m-ary tree into a binary tree
+     * @param parentNode the m-ary tree
+     */
+    private static void convertTreeToBinary(ASTNode parentNode){
+        if(parentNode.getChildCount()>0){
+            for (ASTNode child :parentNode.getChildren()) {
+                convertTreeToBinary(child);
+            }
+        }
+
+        if (parentNode.getChildCount()>2){
+
+            ASTNode secondLastChild = parentNode.getChild(parentNode.getChildCount()-2);
+            ASTNode lastChild = parentNode.getChild(parentNode.getChildCount()-1);
+
+            ASTNode newNode = new ASTNode();
+            newNode.setType(parentNode.getType());
+
+            newNode.addChild(secondLastChild);
+            newNode.addChild(lastChild);
+
+            parentNode.removeChild(parentNode.getChildCount()-1);
+            parentNode.removeChild(parentNode.getChildCount()-2);
+
+            parentNode.addChild(newNode);
+
+            convertTreeToBinary(parentNode);
+        }
+
     }
 
     /**
