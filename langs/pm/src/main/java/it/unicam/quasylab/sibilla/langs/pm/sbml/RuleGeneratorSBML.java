@@ -92,10 +92,19 @@ public class RuleGeneratorSBML {
     public double getRateFromASTNode(ASTNode parentNode){
 
         if(parentNode.getChildCount()>0){
-
+            ASTNode leftNode = parentNode.getLeftChild();
+            ASTNode rightNode = parentNode.getRightChild();
+            ExpressionEvaluatorSBML expEval = new ExpressionEvaluatorSBML();
+            //DA CONTROLLARE
+            BiFunction<Double,Double,Double> fun = expEval.getOperator(parentNode.getId());
+            return fun.apply(getRateFromASTNode(leftNode),getRateFromASTNode(rightNode));
         }else{
-
+            return getDataFromEEorPR(parentNode);
         }
+
+    }
+
+    private double getDataFromEEorPR(ASTNode node){
         return 0.0;
     }
 
@@ -120,6 +129,8 @@ public class RuleGeneratorSBML {
 
         return null;
     }
+
+
 
 
     class TreeVisitor {
