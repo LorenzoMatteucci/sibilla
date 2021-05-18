@@ -12,6 +12,9 @@ import java.util.Hashtable;
  */
 public class ModelSBML extends Model {
 
+    ArrayList<String> listOfParameterString = new ArrayList<>();
+    ArrayList<String> listOfSpeciesString = new ArrayList<>();
+
     private final Hashtable<String,CompartmentSBML> compartmentTable = new Hashtable<>();
 
     /**
@@ -21,7 +24,17 @@ public class ModelSBML extends Model {
     public ModelSBML() {
         super();
         populateCompartmentTable();
+        populateLists();
         applyCorrectionReactionRules();
+    }
+
+    private void populateLists(){
+        for (Parameter p: this.getListOfParameters()) {
+            listOfParameterString.add(p.getName());
+        }
+        for (Species s: this.getListOfSpecies()) {
+            listOfSpeciesString.add(s.getName());
+        }
     }
 
     /**
@@ -50,8 +63,10 @@ public class ModelSBML extends Model {
      */
     private void applyCorrectionReactionRules(){
         for (Reaction r:this.getListOfReactions()) {
-            replaceCompartmentNodes(r.getKineticLaw().getMath());
-            convertTreeToBinary(r.getKineticLaw().getMath());
+            ASTNode reactionTree = r.getKineticLaw().getMath();
+            replaceCompartmentNodes(reactionTree);
+            convertTreeToBinary(reactionTree);
+            tagNodes(reactionTree);
         }
     }
 
@@ -140,6 +155,22 @@ public class ModelSBML extends Model {
             convertTreeToBinary(parentNode);
         }
 
+    }
+
+    private void tagNodes(ASTNode node){
+        if(node.getType().equals(ASTNode.Type.NAME)){
+            if(listOfSpeciesString.contains(node.getName())){
+                node.setId("Species");
+            }
+            if(listOfParameterString.contains(node.getName())){
+                node.setId("Parameter");
+            }
+        }
+        if (node.getChildCount()>0){
+            for (ASTNode child: node.getChildren()) {
+                tagNodes(child);
+            }
+        }
     }
 
     /**

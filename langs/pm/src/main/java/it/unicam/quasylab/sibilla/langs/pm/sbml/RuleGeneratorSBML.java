@@ -100,8 +100,17 @@ public class RuleGeneratorSBML {
 
     private double getDataFromEEorPR(ASTNode node){
 
-        evaluationEnvironment.get("nome parametro");
-        return 0.0;
+        if(node.getId().equals("Parameter")){
+            return evaluationEnvironment.get(node.getName());
+        }
+        //if(node.getId().equals("Species"))
+        else{
+
+            // TO DO
+
+            return 0.0;
+        }
+
     }
 
     /**
@@ -128,7 +137,7 @@ public class RuleGeneratorSBML {
 
 
 
-
+/*
     class TreeVisitor {
         private ASTNode treeJSBML;
         private List<BiFunction<Double, Double, Double>> functionList;
@@ -178,7 +187,7 @@ public class RuleGeneratorSBML {
             return functionList;
         }
     }
-    /*
+
     @Override
     public Boolean visitRule_body(PopulationModelParser.Rule_bodyContext ctx) {
         Predicate<PopulationState> guard = expressionEvaluator.evalStatePredicate(ctx.guard);
