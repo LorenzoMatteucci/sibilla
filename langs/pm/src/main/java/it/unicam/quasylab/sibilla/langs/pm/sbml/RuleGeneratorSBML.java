@@ -83,11 +83,6 @@ public class RuleGeneratorSBML {
         return name.substring(0, name.length() - 1);
     }
 
-    public double getValue(String s){
-        evaluationEnvironment.get(s);
-        //registry.indexOf()
-        return 0.0;
-    }
 
     public double getRateFromASTNode(ASTNode parentNode){
 
@@ -95,8 +90,7 @@ public class RuleGeneratorSBML {
             ASTNode leftNode = parentNode.getLeftChild();
             ASTNode rightNode = parentNode.getRightChild();
             ExpressionEvaluatorSBML expEval = new ExpressionEvaluatorSBML();
-            //DA CONTROLLARE
-            BiFunction<Double,Double,Double> fun = expEval.getOperator(parentNode.getId());
+            BiFunction<Double,Double,Double> fun = expEval.getOperator(parentNode.getType().name());
             return fun.apply(getRateFromASTNode(leftNode),getRateFromASTNode(rightNode));
         }else{
             return getDataFromEEorPR(parentNode);
@@ -105,6 +99,8 @@ public class RuleGeneratorSBML {
     }
 
     private double getDataFromEEorPR(ASTNode node){
+
+        evaluationEnvironment.get("nome parametro");
         return 0.0;
     }
 
