@@ -130,6 +130,7 @@ public class ModelSBML extends Model {
      * @param parentNode the m-ary tree
      */
     private static void convertTreeToBinary(ASTNode parentNode){
+
         if(parentNode.getChildCount()>0){
             for (ASTNode child :parentNode.getChildren()) {
                 convertTreeToBinary(child);

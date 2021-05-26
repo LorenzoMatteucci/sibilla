@@ -1,39 +1,82 @@
 package it.unicam.quasylab.sibilla.langs.pm.sbml;
 
-import it.unicam.quasylab.sibilla.langs.pm.PopulationModelBaseVisitor;
+import it.unicam.quasylab.sibilla.core.models.EvaluationEnvironment;
+import it.unicam.quasylab.sibilla.core.models.MeasureFunction;
+import it.unicam.quasylab.sibilla.core.models.pm.PopulationState;
+import it.unicam.quasylab.sibilla.core.models.pm.util.PopulationRegistry;
+import it.unicam.quasylab.sibilla.langs.pm.PopulationModelParser;
+import org.sbml.jsbml.ASTNode;
 
 import java.util.function.BiFunction;
 
-public class ExpressionEvaluatorSBML {
+public class RuleGeneratorSBMLRemake {
 
-    public class DoubleExpressionEvaluatorSBML extends PopulationModelBaseVisitor<Double>{
+    EvaluationEnvironment evaluationEnvironment;
+    PopulationRegistry populationRegistry;
+
+    public RuleGeneratorSBMLRemake( EvaluationEnvironment ee, PopulationRegistry pr){
+        evaluationEnvironment = ee;
+        populationRegistry = pr;
     }
 
-    /**
-     * Function that return the result of the operation parsed from the input parameter
-     *
-     * @param operator, the string operator
-     * @return the result of the operation
-     */
+    public MeasureFunction<PopulationState> getRuleFromASTNode(ASTNode tree){
+        if(tree.getChildCount()>0){
 
-    public BiFunction<Double, Double, Double> getOperator(String operator){
-        if (operator.equals("PLUS")){
-            return (x,y) -> x+y;
+            ASTNode leftChild = tree.getLeftChild();
+            ASTNode rightChild = tree.getRightChild();
+
+            MeasureFunction<PopulationState> leftChildFunction = getRuleFromASTNode(leftChild);
+            MeasureFunction<PopulationState> rightChildFunction = getRuleFromASTNode(rightChild);
+
+            BiFunction<Double,Double,Double> operation = getOperator(tree);
+
+            return applyBinary(leftChildFunction,operation,rightChildFunction);
+        } else {
+            return getValue(tree);
         }
-        if (operator.equals("MINUS")){
-            return (x,y) -> x-y;
-        }
-        if (operator.equals("TIMES")){
-            return (x,y) -> x*y;
-        }
-        if (operator.equals("DIVIDE")){
-            return (x,y) -> x/y;
-        }
-        return null;
     }
 
-    public void delete(){
-        /*
+    private MeasureFunction<PopulationState> applyBinary(MeasureFunction<PopulationState> left, BiFunction<Double, Double, Double> op, MeasureFunction<PopulationState> right) {
+        return s -> op.apply(left.apply(s),right.apply(s));
+    }
+
+    public MeasureFunction<PopulationState> getValue(ASTNode node) {
+        if(node.getId().equals("Parameter")){
+            double value = evaluationEnvironment.get(node.getName());
+            return s -> value;
+        } else
+        {
+            int idx = populationRegistry.indexOf(node.getName());
+            return s -> s.getFraction(idx);
+        }
+    }
+
+    private BiFunction<Double, Double, Double> getOperator(ASTNode node){
+        String operationType = node.getType().name();
+        switch (operationType) {
+            case "PLUS":
+                return (x,y) -> x+y;
+            case "MINUS":
+                return (x,y) -> x-y;
+            case "TIMES":
+                return (x,y) -> x*y;
+            case "DIVIDE":
+                return (x,y) -> x/y;
+            //case "REAL":
+            //    throw new UnsupportedOperationException(operationType +" is not implemented");
+            default:
+                throw new IllegalArgumentException("Invalid operator: " + operationType);
+        }
+    }
+
+
+
+
+
+
+
+
+            /*
         public void compile(ASTNodeCompiler compiler) throws SBMLException {
     ASTNodeValue value;
     switch (getType()) {
@@ -43,14 +86,6 @@ public class ExpressionEvaluatorSBML {
         case INTEGER:
 
         case POWER:
-
-        case PLUS:
-
-        case MINUS:
-
-        case TIMES:
-
-        case DIVIDE:
 
         case RATIONAL:
 
@@ -209,7 +244,9 @@ public class ExpressionEvaluatorSBML {
         }
          */
 
-    }
+
+
+
 
 
 }

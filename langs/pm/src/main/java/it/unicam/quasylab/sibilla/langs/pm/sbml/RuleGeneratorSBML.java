@@ -44,17 +44,6 @@ public class RuleGeneratorSBML {
         return populationRuleList;
     }
 
-    public List<PopulationRule> getRulesFromRulesList() {
-
-        //  TO DO ?
-
-        return null;
-    }
-
-
-    public List<PopulationRule> getRulesFromEventList() {
-        return null;
-    }
     /*
             PopulationRule rule_S_G_A = new ReactionRule(
                 "S->A",
@@ -132,7 +121,11 @@ public class RuleGeneratorSBML {
 
     private RatePopulationFunction getRatePopulationFunction(Reaction r) {
 
-        return null;
+        double rate = getRateFromASTNode(r.getKineticLaw().getMath());
+        PopulationState popState = new PopulationState();
+        return (currentRate , populationState) -> {
+            return currentRate;
+        };
     }
 
 
