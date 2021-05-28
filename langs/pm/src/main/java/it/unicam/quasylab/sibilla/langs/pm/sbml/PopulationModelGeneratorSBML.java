@@ -24,7 +24,6 @@ public class PopulationModelGeneratorSBML {
 
     private ModelSBML sbmlModel;
 
-
     public PopulationModelGeneratorSBML(String path){
         SBMLReader sbmlReader = new SBMLReader();
         SBMLDocument sbmlDocument = null;
@@ -36,39 +35,15 @@ public class PopulationModelGeneratorSBML {
             e.printStackTrace();
         }
 
-        //Downcasting form Model to ModelSBML
-
         this.sbmlModel = (ModelSBML) sbmlDocument.getModel();
     }
 
     public PopulationModelDefinition getPopulationModelDefinition() throws IOException {
 
-
-        // ...
-
-        return null;
-    }
-
-/*
-    private StateSet<PopulationState> generateStateSet() {
-        return null;
-    }
-
-    private Map<String, Double> getContext() {
-        return null;
-    }
-
-    private Map<String, Measure<PopulationState>> generateMeasures() {
-        return null;
-    }
- */
-
-    /**
-     *
-     * @return
-     */
-    private List<PopulationRule> generateRules() {
-
+        PopulationRegistry populationRegistry = generatePopulationRegistry();
+        EvaluationEnvironment evaluationEnvironment = generateEvaluationEnvironment();
+        RuleGeneratorSBML ruleGeneratorSBML = new RuleGeneratorSBML(evaluationEnvironment,populationRegistry);
+        ArrayList<PopulationRule> modelRules = ruleGeneratorSBML.getRulesFromReactionList(sbmlModel.getListOfReactions());
 
         return null;
     }

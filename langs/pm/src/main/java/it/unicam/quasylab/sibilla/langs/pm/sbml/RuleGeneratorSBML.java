@@ -1,66 +1,45 @@
 package it.unicam.quasylab.sibilla.langs.pm.sbml;
 
 import it.unicam.quasylab.sibilla.core.models.EvaluationEnvironment;
+import it.unicam.quasylab.sibilla.core.models.MeasureFunction;
 import it.unicam.quasylab.sibilla.core.models.pm.*;
 import it.unicam.quasylab.sibilla.core.models.pm.util.PopulationRegistry;
-import it.unicam.quasylab.sibilla.langs.pm.ExpressionEvaluator;
-import org.apache.commons.math3.random.RandomGenerator;
 import org.sbml.jsbml.ASTNode;
 import org.sbml.jsbml.ListOf;
 import org.sbml.jsbml.Reaction;
 import org.sbml.jsbml.SpeciesReference;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class RuleGeneratorSBML {
 
-    private PopulationRegistry registry;
-    private EvaluationEnvironment evaluationEnvironment;
+    EvaluationEnvironment evaluationEnvironment;
+    PopulationRegistry populationRegistry;
 
-    //private ExpressionEvaluator expressionEvaluator;
-    //private HashMap<String, Double> context;
-
-    private List<PopulationRule> rules;
-
-    private String ruleName;
-
-    ListOf<Reaction> reactionList;
-
-
-    public RuleGeneratorSBML(PopulationRegistry registry, EvaluationEnvironment evaluationEnvironment) {
-        this.registry = registry;
-        this.evaluationEnvironment = evaluationEnvironment;
+    public RuleGeneratorSBML(EvaluationEnvironment ee, PopulationRegistry pr){
+        evaluationEnvironment = ee;
+        populationRegistry = pr;
     }
 
-    public List<PopulationRule> getRulesFromReactionList(ListOf<Reaction> reactionList) {
+
+    public ArrayList<PopulationRule> getRulesFromReactionList(List<Reaction> reactionList){
         ArrayList<PopulationRule> populationRuleList = new ArrayList<>();
-        for (Reaction r : reactionList) {
+        for (Reaction r : reactionList){
             populationRuleList.add(getRuleFromReaction(r));
         }
         return populationRuleList;
     }
 
-    /*
-            PopulationRule rule_S_G_A = new ReactionRule(
-                "S->A",
-                new Population[] { new Population(S), new Population(A)} ,
-                new Population[] { new Population(G), new Population(A)},
-                (t,s) -> (1-PROB_ASINT)*s.getOccupancy(S)* PROB_TRANSMISSION*LAMBDA_MEET *(s.getOccupancy(A)/N));
-
-     */
-
-
-    private PopulationRule getRuleFromReaction(Reaction r) {
-        String name = getRuleName(r);
+    public PopulationRule getRuleFromReaction(Reaction r) {
+        String ruleName = getRuleName(r);
         Population[] pre = getReactionElement(r.getListOfReactants());
         Population[] post = getReactionElement(r.getListOfProducts());
-        RatePopulationFunction rateFunction = getRatePopulationFunction(r);
-        return new ReactionRule(name, pre, post, rateFunction);
+        MeasureFunction<PopulationState> rateFunction = getRateFunctionFromASTNode(r.createKineticLaw().getMath());
+        return new ReactionRule(ruleName,pre,post,(t,s) -> rateFunction.apply(s) );
     }
+
 
     private String getRuleName(Reaction r) {
         String name = "";
@@ -73,35 +52,6 @@ public class RuleGeneratorSBML {
     }
 
 
-    public double getRateFromASTNode(ASTNode parentNode){
-
-        if(parentNode.getChildCount()>0){
-            ASTNode leftNode = parentNode.getLeftChild();
-            ASTNode rightNode = parentNode.getRightChild();
-            ExpressionEvaluatorSBML expEval = new ExpressionEvaluatorSBML();
-            BiFunction<Double,Double,Double> fun = expEval.getOperator(parentNode.getType().name());
-            return fun.apply(getRateFromASTNode(leftNode),getRateFromASTNode(rightNode));
-        }else{
-            return getDataFromEEorPR(parentNode);
-        }
-
-    }
-
-    private double getDataFromEEorPR(ASTNode node){
-
-        if(node.getId().equals("Parameter")){
-            return evaluationEnvironment.get(node.getName());
-        }
-        //if(node.getId().equals("Species"))
-        else{
-
-            // TO DO
-
-            return 0.0;
-        }
-
-    }
-
     /**
      * Method used to obtain a collection of Population
      * in order to obtain a pre and a post Population
@@ -113,84 +63,239 @@ public class RuleGeneratorSBML {
     private Population[] getReactionElement(ListOf<SpeciesReference> reactionElements) {
         Population[] speciesInvolved = new Population[reactionElements.size()];
         for (int i = 0; i < reactionElements.size() - 1; i++) {
-            speciesInvolved[i] = new Population(registry.indexOf(reactionElements.getElementName()));
+            speciesInvolved[i] = new Population(populationRegistry.indexOf(reactionElements.getElementName()));
         }
         return speciesInvolved;
     }
 
+    private MeasureFunction<PopulationState> getRateFunctionFromASTNode(ASTNode tree){
+        if(tree.getChildCount()>0){
 
-    private RatePopulationFunction getRatePopulationFunction(Reaction r) {
+            ASTNode leftChild = tree.getLeftChild();
+            ASTNode rightChild = tree.getRightChild();
 
-        double rate = getRateFromASTNode(r.getKineticLaw().getMath());
-        PopulationState popState = new PopulationState();
-        return (currentRate , populationState) -> {
-            return currentRate;
-        };
+            MeasureFunction<PopulationState> leftChildFunction = getRateFunctionFromASTNode(leftChild);
+            MeasureFunction<PopulationState> rightChildFunction = getRateFunctionFromASTNode(rightChild);
+
+            BiFunction<Double,Double,Double> operation = getOperator(tree);
+
+            return applyBinary(leftChildFunction,operation,rightChildFunction);
+        } else {
+            return getValue(tree);
+        }
+    }
+
+    private MeasureFunction<PopulationState> applyBinary(MeasureFunction<PopulationState> left, BiFunction<Double, Double, Double> op, MeasureFunction<PopulationState> right) {
+        return s -> op.apply(left.apply(s),right.apply(s));
+    }
+
+    private MeasureFunction<PopulationState> getValue(ASTNode node) {
+        if(node.getId().equals("Parameter")){
+            double value = evaluationEnvironment.get(node.getName());
+            return s -> value;
+        } else
+        {
+            int idx = populationRegistry.indexOf(node.getName());
+            return s -> s.getFraction(idx);
+        }
+    }
+
+    private BiFunction<Double, Double, Double> getOperator(ASTNode node){
+        String operationType = node.getType().name();
+        switch (operationType) {
+            case "PLUS":
+                return (x,y) -> x+y;
+            case "MINUS":
+                return (x,y) -> x-y;
+            case "TIMES":
+                return (x,y) -> x*y;
+            case "DIVIDE":
+                return (x,y) -> x/y;
+            //case "REAL":
+            //    throw new UnsupportedOperationException(operationType +" is not implemented");
+            default:
+                throw new IllegalArgumentException("Invalid operator: " + operationType);
+        }
     }
 
 
 
-/*
-    class TreeVisitor {
-        private ASTNode treeJSBML;
-        private List<BiFunction<Double, Double, Double>> functionList;
 
-        public TreeVisitor(ASTNode treeJSBML) {
-            this.treeJSBML = treeJSBML;
-        }
 
-        public double getRateFromASTNode(ASTNode parentNode){
-            return 0.0;
-        }
 
-        private void visitTree(ASTNode nodeParent) {
 
-            // if there are no children it means the nodeParent
-            // is a leaf (a type NAME --> a variable)
 
-            // no child means no operation to do
+            /*
+        public void compile(ASTNodeCompiler compiler) throws SBMLException {
+    ASTNodeValue value;
+    switch (getType()) {
 
-            if (nodeParent.getChildCount() > 0) {
-                List<ASTNode> nodeChildren = nodeParent.getChildren();
-                ASTNode.Type nodeType = nodeParent.getType();
-                for (ASTNode nodeChild : nodeChildren) {
-                    if (nodeChild.getType().equals(ASTNode.Type.NAME)){
-                        visitTree(nodeChild);
-                    }else{
+        case REAL:
 
-                    }
-                }
-                BiFunction<Double, Double, Double> nodeFunction = getNodeFunction(nodeChildren, nodeType);
-                functionList.add(nodeFunction);
+        case INTEGER:
 
+        case POWER:
+
+        case RATIONAL:
+
+        case NAME_TIME:
+
+        case FUNCTION_DELAY:
+
+        case NAME:
+
+        case CONSTANT_PI:
+
+        case CONSTANT_E:
+
+        case CONSTANT_TRUE:
+
+        case CONSTANT_FALSE:
+
+        case NAME_AVOGADRO:
+
+        case FUNCTION_RATE_OF:
+
+        case REAL_E:
+
+        case FUNCTION_LOG:
+
+        case FUNCTION_ABS:
+
+        case FUNCTION_ARCCOS:
+
+        case FUNCTION_ARCCOSH:
+
+        case FUNCTION_ARCCOT:
+
+        case FUNCTION_ARCCOTH:
+
+        case FUNCTION_ARCCSC:
+
+        case FUNCTION_ARCCSCH:
+
+        case FUNCTION_ARCSEC:
+
+        case FUNCTION_ARCSECH:
+
+        case FUNCTION_ARCSIN:
+
+        case FUNCTION_ARCSINH:
+
+        case FUNCTION_ARCTAN:
+
+        case FUNCTION_ARCTANH:
+
+        case FUNCTION_CEILING:
+
+        case FUNCTION_COS:
+
+        case FUNCTION_COSH:
+
+        case FUNCTION_COT:
+
+        case FUNCTION_COTH:
+
+        case FUNCTION_CSC:
+
+        case FUNCTION_CSCH:
+
+        case FUNCTION_EXP:
+
+        case FUNCTION_FACTORIAL:
+
+        case FUNCTION_FLOOR:
+
+        case FUNCTION_LN:
+
+        case FUNCTION_MAX:
+
+        case FUNCTION_MIN:
+
+        case FUNCTION_POWER:
+
+        case FUNCTION_QUOTIENT:
+
+        case FUNCTION_REM:
+
+        case FUNCTION_ROOT:
+
+        case FUNCTION_SECH:
+
+        case FUNCTION_SELECTOR:
+
+        case FUNCTION_SIN:
+
+        case FUNCTION_SINH:
+
+        case FUNCTION_TAN:
+
+        case FUNCTION_TANH:
+
+        case FUNCTION: {
+            case FUNCTION_CSYMBOL: {
+                case FUNCTION_PIECEWISE:
+
+                case LAMBDA:
+
+                case LOGICAL_AND:
+                    value = compiler.and(getChildren());
+                    value.setUIFlag(getChildCount() <= 1);
+                    break;
+                case LOGICAL_XOR:
+                    value = compiler.xor(getChildren());
+                    value.setUIFlag(getChildCount() <= 1);
+                    break;
+                case LOGICAL_OR:
+                    value = compiler.or(getChildren());
+                    value.setUIFlag(getChildCount() <= 1);
+                    break;
+                case LOGICAL_IMPLIES:
+                    value = compiler.implies(getChildren());
+                    value.setUIFlag(getChildCount() <= 1);
+                    break;
+                case LOGICAL_NOT:
+                    value = compiler.not(getLeftChild());
+                    break;
+                case RELATIONAL_EQ:
+                    value = compiler.eq(getLeftChild(), getRightChild());
+                    break;
+                case RELATIONAL_GEQ:
+                    value = compiler.geq(getLeftChild(), getRightChild());
+                    break;
+                case RELATIONAL_GT:
+                    value = compiler.gt(getLeftChild(), getRightChild());
+                    break;
+                case RELATIONAL_NEQ:
+                    value = compiler.neq(getLeftChild(), getRightChild());
+                    break;
+                case RELATIONAL_LEQ:
+                    value = compiler.leq(getLeftChild(), getRightChild());
+                    break;
+                case RELATIONAL_LT:
+                    value = compiler.lt(getLeftChild(), getRightChild());
+                    break;
+                case VECTOR:
+                    value = compiler.vector(getChildren());
+                    value.setUIFlag(getChildCount() <= 1);
+                    break;
+                default: // UNKNOWN:
+                    value = compiler.unknownValue();
+                    break;
             }
+            value.setType(getType());
+            MathContainer parent = getParentSBMLObject();
+            if (parent != null) {
+                value.setLevel(parent.getLevel());
+                value.setVersion(parent.getVersion());
+            }
+            return value;
         }
-
-        private BiFunction<Double, Double, Double> getNodeFunction(List<ASTNode> nodeChildren, ASTNode.Type operation) {
-            return null;
-        }
+         */
 
 
-        public List<BiFunction<Double, Double, Double>> getFunctionList() {
-            BiFunction<Double, Double, Double> fun = (x, y) -> x + y;
-            BiFunction<Double, Double, Double> fun1 = (uffapuzzetta, pippoCaccolino) -> uffapuzzetta + pippoCaccolino;
 
-            double g = fun.apply(fun.apply(4.0, 5.0), 4.0);
 
-            return functionList;
-        }
-    }
-
-    @Override
-    public Boolean visitRule_body(PopulationModelParser.Rule_bodyContext ctx) {
-        Predicate<PopulationState> guard = expressionEvaluator.evalStatePredicate(ctx.guard);
-        MeasureFunction<PopulationState> rateFunction = expressionEvaluator.evalStateFunction(ctx.rate);
-        Population[] pre = expressionEvaluator.evalPopulationPattern(ctx.pre);
-        Population[] post = expressionEvaluator.evalPopulationPattern(ctx.post);
-        rules.add(new ReactionRule(ruleName+context.toString(),guard,pre,post,(t,s) -> rateFunction.apply(s)));
-        return true;
-    }
-     */
 
 
 }
