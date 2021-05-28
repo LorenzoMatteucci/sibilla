@@ -12,6 +12,7 @@ import org.sbml.jsbml.SpeciesReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class RuleGeneratorSBML {
 
@@ -24,6 +25,14 @@ public class RuleGeneratorSBML {
     }
 
 
+    /**
+     *
+     * Method that return the list of Population Rules
+     * from a list of Reaction
+     *
+     * @param reactionList
+     * @return The list of population rules
+     */
     public ArrayList<PopulationRule> getRulesFromReactionList(List<Reaction> reactionList){
         ArrayList<PopulationRule> populationRuleList = new ArrayList<>();
         for (Reaction r : reactionList){
@@ -32,6 +41,12 @@ public class RuleGeneratorSBML {
         return populationRuleList;
     }
 
+
+    /**
+     * Method
+     * @param r
+     * @return
+     */
     public PopulationRule getRuleFromReaction(Reaction r) {
         String ruleName = getRuleName(r);
         Population[] pre = getReactionElement(r.getListOfReactants());
@@ -69,8 +84,14 @@ public class RuleGeneratorSBML {
     }
 
     private MeasureFunction<PopulationState> getRateFunctionFromASTNode(ASTNode tree){
-        if(tree.getChildCount()>0){
 
+        /*
+                if(tree.getChildCount() == 1){
+            return null;
+        }
+        else
+         */
+        if(tree.getChildCount()>0){
             ASTNode leftChild = tree.getLeftChild();
             ASTNode rightChild = tree.getRightChild();
 
@@ -89,6 +110,8 @@ public class RuleGeneratorSBML {
         return s -> op.apply(left.apply(s),right.apply(s));
     }
 
+
+    
     private MeasureFunction<PopulationState> getValue(ASTNode node) {
         if(node.getId().equals("Parameter")){
             double value = evaluationEnvironment.get(node.getName());
@@ -117,6 +140,15 @@ public class RuleGeneratorSBML {
                 throw new IllegalArgumentException("Invalid operator: " + operationType);
         }
     }
+
+
+/*
+    private Function<Double,Double> getOperator(ASTNode node){
+
+        // TO DO
+        return null;
+    }
+ */
 
 
 
