@@ -9,6 +9,7 @@ import org.sbml.jsbml.ListOf;
 import org.sbml.jsbml.Reaction;
 import org.sbml.jsbml.SpeciesReference;
 
+import java.sql.Struct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -85,31 +86,38 @@ public class RuleGeneratorSBML {
 
     private MeasureFunction<PopulationState> getRateFunctionFromASTNode(ASTNode tree){
 
-        /*
-                if(tree.getChildCount() == 1){
-            return null;
-        }
-        else
-         */
         if(tree.getChildCount()>0){
-            ASTNode leftChild = tree.getLeftChild();
-            ASTNode rightChild = tree.getRightChild();
+            if (tree.getChildCount()==1){
+                ASTNode onlyChild = tree.getChild(0);
 
-            MeasureFunction<PopulationState> leftChildFunction = getRateFunctionFromASTNode(leftChild);
-            MeasureFunction<PopulationState> rightChildFunction = getRateFunctionFromASTNode(rightChild);
+                MeasureFunction<PopulationState> onlyChildFunction = getRateFunctionFromASTNode(onlyChild);
 
-            BiFunction<Double,Double,Double> operation = getOperator(tree);
+                Function<Double,Double> operation = getUnaryOperator(tree);
 
-            return applyBinary(leftChildFunction,operation,rightChildFunction);
-        } else {
-            return getValue(tree);
+                return applyUnary(onlyChildFunction, operation);
+            }
+            if (tree.getChildCount()>1){
+                ASTNode leftChild = tree.getLeftChild();
+                ASTNode rightChild = tree.getRightChild();
+
+                MeasureFunction<PopulationState> leftChildFunction = getRateFunctionFromASTNode(leftChild);
+                MeasureFunction<PopulationState> rightChildFunction = getRateFunctionFromASTNode(rightChild);
+
+                BiFunction<Double,Double,Double> operation = getBinaryOperator(tree);
+
+                return applyBinary(leftChildFunction,operation,rightChildFunction);
+            }
         }
+        return getValue(tree);
     }
 
     private MeasureFunction<PopulationState> applyBinary(MeasureFunction<PopulationState> left, BiFunction<Double, Double, Double> op, MeasureFunction<PopulationState> right) {
         return s -> op.apply(left.apply(s),right.apply(s));
     }
 
+    private MeasureFunction<PopulationState> applyUnary(MeasureFunction<PopulationState> onlyChild, Function<Double, Double> op){
+        return s->op.apply(onlyChild.apply(s));
+    }
 
     
     private MeasureFunction<PopulationState> getValue(ASTNode node) {
@@ -123,7 +131,7 @@ public class RuleGeneratorSBML {
         }
     }
 
-    private BiFunction<Double, Double, Double> getOperator(ASTNode node){
+    private BiFunction<Double, Double, Double> getBinaryOperator(ASTNode node){
         String operationType = node.getType().name();
         switch (operationType) {
             case "PLUS":
@@ -134,26 +142,104 @@ public class RuleGeneratorSBML {
                 return (x,y) -> x*y;
             case "DIVIDE":
                 return (x,y) -> x/y;
-            //case "REAL":
-            //    throw new UnsupportedOperationException(operationType +" is not implemented");
+            case "POWER":
+                return (x,y) -> Math.pow(x,y);
+            case "FUNCTION_REM":
+                return (x,y) -> x%y;
+            case "FUNCTION_QUOTIENT":
+                return (x,y) -> Math.floor(x/y);
+            case "FUNCTION_MAX":
+                return (x,y) -> Math.max(x,y);
+            case "FUNCTION_MIN":
+                return (x,y) -> Math.min(x,y);
+
+
             default:
                 throw new IllegalArgumentException("Invalid operator: " + operationType);
         }
     }
 
 
-/*
-    private Function<Double,Double> getOperator(ASTNode node){
 
-        // TO DO
-        return null;
+    private Function<Double,Double> getUnaryOperator(ASTNode node){
+        String operationType = node.getType().name();
+        switch (operationType){
+
+            //Arithmetic and Algebraic Functions
+
+            case "FUNCTION_ROOT":
+                return (x) -> Math.sqrt(x);
+            case "FUNCTION_ABS":
+                return (x) -> Math.abs(x);
+            case "FUNCTION_LN":
+                return (x) -> Math.log(x);
+            case "FUNCTION_LOG":
+                return (x) -> Math.log10(x);
+            case "FUNCTION_FLOOR":
+                return (x) -> Math.floor(x);
+            case "FUNCTION_CEILING":
+                return (x) -> Math.ceil(x);
+            case "FUNCTION_FACTORIAL":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_EXP":
+                return (x) -> Math.exp(x);
+
+            //Trigonometric Functions
+
+            case "FUNCTION_SIN":
+                return (x) -> Math.sin(x);
+            case "FUNCTION_SINH":
+                return (x) -> Math.sinh(x);
+            case "FUNCTION_ARCSIN":
+                return (x) -> Math.asin(x);
+            case "FUNCTION_ARCSINH":
+                throw new IllegalArgumentException(operationType + "not implemented");
+            case "FUNCTION_COS":
+                return (x) -> Math.cos(x);
+            case "FUNCTION_COSH":
+                return (x) -> Math.cosh(x);
+            case "FUNCTION_ARCCOS":
+                return (x) -> Math.acos(x);
+            case "FUNCTION_ARCCOSH":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_TAN":
+                return (x) -> Math.tan(x);
+            case "FUNCTION_TANH":
+                return (x) -> Math.tanh(x);
+            case "FUNCTION_ARCTAN":
+                return (x) -> Math.atan(x);
+            case "FUNCTION_ARCTANH":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_COT":
+                return (x) -> Math.cos(x)/Math.sin(x);
+            case "FUNCTION_COTH":
+                return (x) -> Math.cosh(x)/Math.sinh(x);
+            case "FUNCTION_ARCCOT":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_ARCCOTH":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_SEC":
+                return (x) -> 1.0/Math.cos(x);
+            case "FUNCTION_SECH":
+                return (x) -> 1.0/Math.cosh(x);
+            case "FUNCTION_ARCSEC":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_ARCSECH":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_CSC":
+                return (x) -> 1.0/Math.sin(x);
+            case "FUNCTION_CSCH":
+                return (x) -> 1.0/Math.sinh(x);
+            case "FUNCTION_ARCCSC":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            case "FUNCTION_ARCCSCH":
+                throw new UnsupportedOperationException(operationType + "not implemented");
+            default:
+                throw new IllegalArgumentException("Invalid operator: " + operationType);
+        }
+
+
     }
- */
-
-
-
-
-
 
 
 
@@ -165,8 +251,6 @@ public class RuleGeneratorSBML {
         case REAL:
 
         case INTEGER:
-
-        case POWER:
 
         case RATIONAL:
 
@@ -190,79 +274,9 @@ public class RuleGeneratorSBML {
 
         case REAL_E:
 
-        case FUNCTION_LOG:
-
-        case FUNCTION_ABS:
-
-        case FUNCTION_ARCCOS:
-
-        case FUNCTION_ARCCOSH:
-
-        case FUNCTION_ARCCOT:
-
-        case FUNCTION_ARCCOTH:
-
-        case FUNCTION_ARCCSC:
-
-        case FUNCTION_ARCCSCH:
-
-        case FUNCTION_ARCSEC:
-
-        case FUNCTION_ARCSECH:
-
-        case FUNCTION_ARCSIN:
-
-        case FUNCTION_ARCSINH:
-
-        case FUNCTION_ARCTAN:
-
-        case FUNCTION_ARCTANH:
-
-        case FUNCTION_CEILING:
-
-        case FUNCTION_COS:
-
-        case FUNCTION_COSH:
-
-        case FUNCTION_COT:
-
-        case FUNCTION_COTH:
-
-        case FUNCTION_CSC:
-
-        case FUNCTION_CSCH:
-
-        case FUNCTION_EXP:
-
-        case FUNCTION_FACTORIAL:
-
-        case FUNCTION_FLOOR:
-
-        case FUNCTION_LN:
-
-        case FUNCTION_MAX:
-
-        case FUNCTION_MIN:
-
         case FUNCTION_POWER:
 
-        case FUNCTION_QUOTIENT:
-
-        case FUNCTION_REM:
-
-        case FUNCTION_ROOT:
-
-        case FUNCTION_SECH:
-
         case FUNCTION_SELECTOR:
-
-        case FUNCTION_SIN:
-
-        case FUNCTION_SINH:
-
-        case FUNCTION_TAN:
-
-        case FUNCTION_TANH:
 
         case FUNCTION: {
             case FUNCTION_CSYMBOL: {
