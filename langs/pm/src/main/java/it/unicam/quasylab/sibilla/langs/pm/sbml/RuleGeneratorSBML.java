@@ -135,7 +135,7 @@ public class RuleGeneratorSBML {
         String operationType = node.getType().name();
         switch (operationType) {
             case "PLUS":
-                return (x,y) -> x+y;
+                return Double::sum;
             case "MINUS":
                 return (x,y) -> x-y;
             case "TIMES":
@@ -143,15 +143,15 @@ public class RuleGeneratorSBML {
             case "DIVIDE":
                 return (x,y) -> x/y;
             case "POWER":
-                return (x,y) -> Math.pow(x,y);
+                return Math::pow;
             case "FUNCTION_REM":
                 return (x,y) -> x%y;
             case "FUNCTION_QUOTIENT":
                 return (x,y) -> Math.floor(x/y);
             case "FUNCTION_MAX":
-                return (x,y) -> Math.max(x,y);
+                return Math::max;
             case "FUNCTION_MIN":
-                return (x,y) -> Math.min(x,y);
+                return Math::min;
 
 
             default:
@@ -159,79 +159,75 @@ public class RuleGeneratorSBML {
         }
     }
 
-
-
     private Function<Double,Double> getUnaryOperator(ASTNode node){
         String operationType = node.getType().name();
         switch (operationType){
 
-            //Arithmetic and Algebraic Functions
+            //  Arithmetic and Algebraic Functions
 
             case "FUNCTION_ROOT":
-                return (x) -> Math.sqrt(x);
+                return Math::sqrt;
             case "FUNCTION_ABS":
-                return (x) -> Math.abs(x);
+                return Math::abs;
             case "FUNCTION_LN":
-                return (x) -> Math.log(x);
+                return Math::log;
             case "FUNCTION_LOG":
-                return (x) -> Math.log10(x);
+                return Math::log10;
             case "FUNCTION_FLOOR":
-                return (x) -> Math.floor(x);
+                return Math::floor;
             case "FUNCTION_CEILING":
-                return (x) -> Math.ceil(x);
+                return Math::ceil;
             case "FUNCTION_FACTORIAL":
-                throw new UnsupportedOperationException(operationType + "not implemented");
+                return (x) -> {
+                    BiFunction<BiFunction, Double, Double> factHelper = (f, d) -> (d == 0) ? 1.0 : d*(double)f.apply(f,d-1);
+                    return factHelper.apply(factHelper, x);
+                };
             case "FUNCTION_EXP":
-                return (x) -> Math.exp(x);
+                return Math::exp;
 
-            //Trigonometric Functions
+            //  Trigonometric Functions
 
             case "FUNCTION_SIN":
-                return (x) -> Math.sin(x);
+                return Math::sin;
             case "FUNCTION_SINH":
-                return (x) -> Math.sinh(x);
+                return Math::sinh;
             case "FUNCTION_ARCSIN":
-                return (x) -> Math.asin(x);
+                return Math::asin;
             case "FUNCTION_ARCSINH":
-                throw new IllegalArgumentException(operationType + "not implemented");
+                return (x) -> Math.log(x + Math.sqrt(Math.pow(x, 2) + 1));
             case "FUNCTION_COS":
-                return (x) -> Math.cos(x);
+                return Math::cos;
             case "FUNCTION_COSH":
-                return (x) -> Math.cosh(x);
+                return Math::cosh;
             case "FUNCTION_ARCCOS":
-                return (x) -> Math.acos(x);
+                return Math::acos;
             case "FUNCTION_ARCCOSH":
-                throw new UnsupportedOperationException(operationType + "not implemented");
+                return (x) -> Math.log(x + Math.sqrt(Math.pow(x, 2) - 1));
             case "FUNCTION_TAN":
-                return (x) -> Math.tan(x);
+                return Math::tan;
             case "FUNCTION_TANH":
-                return (x) -> Math.tanh(x);
+                return Math::tanh;
             case "FUNCTION_ARCTAN":
-                return (x) -> Math.atan(x);
+                return Math::atan;
             case "FUNCTION_ARCTANH":
-                throw new UnsupportedOperationException(operationType + "not implemented");
+                return (x) -> 0.5*Math.log( (x + 1.0) / (x - 1.0));
             case "FUNCTION_COT":
                 return (x) -> Math.cos(x)/Math.sin(x);
             case "FUNCTION_COTH":
                 return (x) -> Math.cosh(x)/Math.sinh(x);
-            case "FUNCTION_ARCCOT":
-                throw new UnsupportedOperationException(operationType + "not implemented");
-            case "FUNCTION_ARCCOTH":
-                throw new UnsupportedOperationException(operationType + "not implemented");
             case "FUNCTION_SEC":
                 return (x) -> 1.0/Math.cos(x);
             case "FUNCTION_SECH":
                 return (x) -> 1.0/Math.cosh(x);
-            case "FUNCTION_ARCSEC":
-                throw new UnsupportedOperationException(operationType + "not implemented");
-            case "FUNCTION_ARCSECH":
-                throw new UnsupportedOperationException(operationType + "not implemented");
             case "FUNCTION_CSC":
                 return (x) -> 1.0/Math.sin(x);
             case "FUNCTION_CSCH":
                 return (x) -> 1.0/Math.sinh(x);
+            case "FUNCTION_ARCCOT":
+            case "FUNCTION_ARCCOTH":
+            case "FUNCTION_ARCSEC":
+            case "FUNCTION_ARCSECH":
             case "FUNCTION_ARCCSC":
-                throw new UnsupportedOperationException(operationType + "not implemented");
             case "FUNCTION_ARCCSCH":
                 throw new UnsupportedOperationException(operationType + "not implemented");
             default:
@@ -240,8 +236,6 @@ public class RuleGeneratorSBML {
 
 
     }
-
-
 
             /*
         public void compile(ASTNodeCompiler compiler) throws SBMLException {

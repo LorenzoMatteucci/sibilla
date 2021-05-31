@@ -45,7 +45,13 @@ public class PopulationModelGeneratorSBML {
         RuleGeneratorSBML ruleGeneratorSBML = new RuleGeneratorSBML(evaluationEnvironment,populationRegistry);
         ArrayList<PopulationRule> modelRules = ruleGeneratorSBML.getRulesFromReactionList(sbmlModel.getListOfReactions());
 
-        return null;
+        return new PopulationModelDefinition(
+                generateEvaluationEnvironment(),
+                ee -> generatePopulationRegistry(),
+                this::generateRules,
+                null,
+                (ee,st) -> StateSet.newStateSet(initialState())
+        );
     }
 
     /**
@@ -75,6 +81,21 @@ public class PopulationModelGeneratorSBML {
         ListOf<org.sbml.jsbml.Parameter> parameterList = sbmlModel.getListOfParameters();
         for (Parameter p : parameterList) ee.register(p.getName(),p.getValue());
         return ee;
+    }
+
+    private List<PopulationRule> generateRules( EvaluationEnvironment environment, PopulationRegistry registry) {
+        RuleGeneratorSBML ruleGeneratorSBML = new RuleGeneratorSBML(environment,registry);
+        return ruleGeneratorSBML.getRulesFromReactionList(sbmlModel.getListOfReactions());
+
+    }
+
+    private PopulationState initialState(){
+        ListOf<Species> speciesList = sbmlModel.getListOfSpecies();
+        int[] initialState = new int[speciesList.size()];
+        for (int i = 0; i < speciesList.size(); i++) {
+            initialState[i] = (int) speciesList.get(i).getInitialAmount();
+        }
+        return new PopulationState(initialState);
     }
 
 }
